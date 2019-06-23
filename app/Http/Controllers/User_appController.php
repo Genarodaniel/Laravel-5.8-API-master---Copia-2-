@@ -5,6 +5,7 @@ namespace app\Http\Controllers;
 use Illuminate\Http\Request;
 use App\User_app;
 use Validator;
+use App\API\ApiError;
 
 class User_appController extends \App\Http\Controllers\Controller
 {
@@ -19,15 +20,36 @@ class User_appController extends \App\Http\Controllers\Controller
 
     public function all_users(){
 
-        $data = ['data'=>$this->user_app->all()];
+       try{ $data = ['data'=>$this->user_app->all()];
         return response()->json($data);
+       }
+
+
+        catch(\Exception $e){
+            if(config('app.debug')){
+                return response()->json(ApiError::errorMessage($e->getMessage(),1010));
+
+            }
+            return response()->json(ApiError::errorMessage('Houve um erro ao realizar a operação',1010));
+        }
     }
 
 
 
     public function show(\App\User_app $id){
+       
+       try{
         $data =['data'=>$id];
         return response()->json($data);
+       }
+     
+        catch(\Exception $e){
+            if(config('app.debug')){
+                return response()->json(ApiError::errorMessage($e->getMessage(),1010));
+
+            }
+            return response()->json(ApiError::errorMessage('Houve um erro ao realizar a operação',1010));
+        }
     }
 
     public function ok(){
@@ -42,22 +64,36 @@ class User_appController extends \App\Http\Controllers\Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            'name' => 'required',
-            'email'=> 'required|email',
-            'user_type'=> 'required',
-            'password'=>'required'
+        try{
+            $validator = Validator::make($request->all(),[
+                'name' => 'required',
+                'email'=> 'required|email',
+                'user_type'=> 'required',
+                'password'=>'required'
+        
+            ]);
+                if($validator->fails()){
+                    return response()->json(['error' => $validator->errors()],401);
+                }
+                $input =$request->all();
+                $input['password'] = bcrypt($input['password']);
+                $encrypt_pass= bcrypt($input['password']);
+                $request['password']=$encrypt_pass;
+                $data = User_app::create($request->all());
+                $success['name'] = $data->name;
     
-        ]);
-            if($validator->fails()){
-                return response()->json(['error' => $validator->errors()],401);
-            }
-            $input =$request->all();
-            $input['password'] = bcrypt($input['password']);
-            $data = User_app::create($request->all());
-            $success['name'] = $data->name;
+            return response()->json(['success' => $success],$this->successStatus);
 
-        return response()->json(['success' => $success],$this->successStatus);
+        }
+        catch(\Exception $e){
+            if(config('app.debug')){
+                return response()->json(ApiError::errorMessage($e->getMessage(),1010));
+
+            }
+            return response()->json(ApiError::errorMessage('Houve um erro ao realizar a operação',1010));
+        }
+      
+       
     }
 
 

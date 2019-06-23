@@ -18,6 +18,8 @@ Route::get('/ok','ResidentController@all_users')->name('ok');
 	Route::group(['middleware' =>'auth:api'], function(){
 		Route::post('details','UserController@details');
 		Route::get('/', 'User_appController@all_users')->name('all_users');
+		Route::post('add_user','User_appController@store')->name('add_user');
+		
 	});
 
 });
